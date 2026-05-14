@@ -1,32 +1,38 @@
 @echo off
-REM Build VIScalculator.exe with PyInstaller.
-REM Run this from a Python venv that has the project requirements installed.
+setlocal
 
-set NAME=VIScalculator
+REM Activate venv if present
+if exist .venv\Scripts\activate.bat call .venv\Scripts\activate.bat
+
+REM Verify Python is reachable
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Python is not on PATH. Install Python 3.10 or 3.11 and re-run setup_env.bat.
+    exit /b 1
+)
+
+REM Make sure PyInstaller is installed
+python -c "import PyInstaller" >nul 2>&1
+if errorlevel 1 (
+    echo Installing PyInstaller...
+    python -m pip install --upgrade pyinstaller
+    if errorlevel 1 (
+        echo [ERROR] Failed to install PyInstaller.
+        exit /b 1
+    )
+)
 
 REM Clean previous artifacts
 if exist build rmdir /s /q build
-if exist dist rmdir /s /q dist
-if exist %NAME%.spec del /q %NAME%.spec
+if exist dist  rmdir /s /q dist
 
-pyinstaller ^
-    --name %NAME% ^
-    --onefile ^
-    --windowed ^
-    --collect-all rasterio ^
-    --collect-all fiona ^
-    --collect-all geopandas ^
-    --collect-all pyproj ^
-    --collect-all shapely ^
-    --collect-submodules rasterio ^
-    --collect-submodules fiona ^
-    --hidden-import rasterio._shim ^
-    --hidden-import rasterio.vrt ^
-    --hidden-import rasterio.sample ^
-    --hidden-import rasterio.control ^
-    --hidden-import fiona._shim ^
-    --hidden-import fiona.schema ^
-    app.py
+REM Build using the spec file
+python -m PyInstaller --noconfirm viscalc.spec
+if errorlevel 1 (
+    echo [ERROR] PyInstaller build failed.
+    exit /b 1
+)
 
 echo.
-echo Build done. Executable: dist\%NAME%.exe
+echo Build complete: dist\VIScalculator.exe
+endlocal

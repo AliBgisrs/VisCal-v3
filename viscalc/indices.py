@@ -7,6 +7,15 @@ from typing import Iterator
 
 import numpy as np
 
+ALL_VI_NAMES: tuple[str, ...] = (
+    # MS-derived
+    "NDVI", "GNDVI", "NDRE", "CIRE", "GCI",
+    "SAVI", "OSAVI", "MSAVI", "NDREI", "MCARI",
+    # RGB-derived
+    "VARI", "GLI", "NGRDI", "ExG", "ExR", "ExGR",
+    "TGI", "MGRVI", "RGBVI", "CIVE",
+)
+
 BAND_REQS = {
     "NDVI": ("nir", "red"),
     "GNDVI": ("nir", "green"),
@@ -60,3 +69,26 @@ def compute_indices(bands: dict[str, np.ndarray]) -> Iterator[tuple[str, np.ndar
     if has("rededge", "red", "green"):
         re, red, green = bands["rededge"], bands["red"], bands["green"]
         yield "MCARI", ((re - red) - 0.2 * (re - green)) * _safe_divide(re, red)
+
+
+def compute_rgb_indices(bands: dict[str, np.ndarray]) -> Iterator[tuple[str, np.ndarray]]:
+    """VIs derived from an RGB mosaic.
+
+    Expects keys 'R', 'G', 'B'. Arrays may be uint8 (0-255) or float reflectance.
+    """
+    if not all(k in bands for k in ("R", "G", "B")):
+        return
+    R = bands["R"].astype(np.float32)
+    G = bands["G"].astype(np.float32)
+    B = bands["B"].astype(np.float32)
+
+    yield "VARI", _safe_divide(G - R, G + R - B)
+    yield "GLI", _safe_divide(2 * G - R - B, 2 * G + R + B)
+    yield "NGRDI", _safe_divide(G - R, G + R)
+    yield "ExG", 2 * G - R - B
+    yield "ExR", 1.4 * R - G
+    yield "ExGR", (2 * G - R - B) - (1.4 * R - G)
+    yield "TGI", G - 0.39 * R - 0.61 * B
+    yield "MGRVI", _safe_divide(G * G - R * R, G * G + R * R)
+    yield "RGBVI", _safe_divide(G * G - R * B, G * G + R * B)
+    yield "CIVE", 0.441 * R - 0.811 * G + 0.385 * B + 18.78745
