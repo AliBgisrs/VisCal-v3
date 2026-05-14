@@ -1,4 +1,5 @@
 # VI Calculator
+<img width="892" height="646" alt="image" src="https://github.com/user-attachments/assets/a16cdb4f-0876-4a12-9607-978eb1f4fc1e" />
 
 A desktop tool for batch-computing vegetation indices (VIs) from multispectral and
 RGB drone mosaics and extracting per-plot zonal statistics into a single Excel
